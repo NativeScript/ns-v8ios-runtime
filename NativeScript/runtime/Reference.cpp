@@ -58,7 +58,7 @@ Local<v8::Function> Reference::GetInteropReferenceCtorFunc(Local<Context> contex
     Local<Object> prototype = prototypeValue.As<Object>();
     Reference::RegisterToStringMethod(context, prototype);
 
-    cache->InteropReferenceCtorFunc = std::make_unique<Persistent<v8::Function>>(isolate, ctorFunc);
+    cache->InteropReferenceCtorFunc = std::make_unique<Persistent<v8::Function> >(isolate, ctorFunc);
 
     return ctorFunc;
 }
@@ -79,6 +79,10 @@ void Reference::ReferenceConstructorCallback(const FunctionCallbackInfo<Value>& 
             tns::Assert(typeWrapper != nullptr, isolate);
             val = new Persistent<Value>(isolate, info[1]);
         }
+    }
+    
+    if(val != nullptr) {
+        val->SetWeak();
     }
 
     ReferenceWrapper* wrapper = new ReferenceWrapper(typeWrapper, val);

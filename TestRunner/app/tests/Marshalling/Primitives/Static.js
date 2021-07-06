@@ -224,4 +224,21 @@ describe(module.id, function () {
             TNSPrimitives.methodWithUnichar('iPhone');
         }).toThrowError();
     });
+    
+    
+    it("StaticMethodWithNSNumber1", function () {
+        var result = TNSPrimitives.methodWithNSNumber(0);
+        expect(result).toBe(0);
+        
+        var actual = TNSGetOutput();
+        expect(actual).toBe("0");
+    });
+    
+    it("StaticMethodWithNSNumber2", function () {
+        var result = TNSPrimitives.methodWithNSNumber(true);
+        expect(result).toBe(true);
+        
+        var actual = TNSGetOutput();
+        expect(actual).toBe("1");
+    });
 });

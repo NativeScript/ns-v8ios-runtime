@@ -267,6 +267,7 @@ void ArgConverter::SetValue(Local<Context> context, void* retValue, Local<Value>
                 id adapter = [[DictionaryAdapter alloc] initWithJSObject:value.As<Object>() isolate:isolate];
                 memset(retValue, 0, sizeof(id));
                 *static_cast<id __strong *>(retValue) = adapter;
+                CFAutorelease(adapter);
                 return;
             }
         } else if (type == BinaryTypeEncodingType::StructDeclarationReference) {

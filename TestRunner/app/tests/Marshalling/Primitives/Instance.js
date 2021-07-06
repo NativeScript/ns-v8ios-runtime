@@ -224,4 +224,20 @@ describe(module.id, function () {
             TNSPrimitives.alloc().init().methodWithUnichar('iPhone');
         }).toThrowError();
     });
+    
+    it("InstanceMethodWithNSNumber1", function () {
+        var result = TNSPrimitives.alloc().init().methodWithNSNumber(0);
+        expect(result).toBe(0);
+
+        var actual = TNSGetOutput();
+        expect(actual).toBe("0");
+    });
+    
+    it("InstanceMethodWithNSNumber2", function () {
+        var result = TNSPrimitives.alloc().init().methodWithNSNumber(true);
+        expect(result).toBe(true);
+
+        var actual = TNSGetOutput();
+        expect(actual).toBe("1");
+    });
 });

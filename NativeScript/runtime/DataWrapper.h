@@ -259,6 +259,17 @@ public:
           disposeData_(false) {
     }
 
+    ~ReferenceWrapper() {
+        if(this->value_ != nullptr) {
+            value_->Reset();
+            delete value_;
+        }
+        
+        if (this->data_ != nullptr) {
+            std::free(this->data_);
+        }
+    }
+
     const WrapperType Type() {
         return WrapperType::Reference;
     }
@@ -291,15 +302,11 @@ public:
     }
 
     void SetData(void* data, bool disposeData = false) {
-        if (this->data_ != nullptr && data != nullptr && this->disposeData_) {
+        if (this->data_ != nullptr && this->disposeData_) {
             std::free(this->data_);
         }
         this->data_ = data;
         this->disposeData_ = disposeData;
-    }
-
-    bool ShouldDisposeData() {
-        return this->disposeData_;
     }
 private:
     BaseDataWrapper* typeWrapper_;

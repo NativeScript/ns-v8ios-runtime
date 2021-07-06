@@ -466,6 +466,8 @@ BinaryTypeEncodingType ClassBuilder::GetTypeEncodingType(Isolate* isolate, Local
             return pdw->TypeEncoding()->type;
         } else if (wrapper->Type() == WrapperType::ObjCObject) {
             return BinaryTypeEncodingType::IdEncoding;
+        } else if (wrapper->Type() == WrapperType::PointerType) {
+            return BinaryTypeEncodingType::PointerEncoding;
         }
     }
 

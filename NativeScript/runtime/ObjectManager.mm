@@ -112,9 +112,6 @@ bool ObjectManager::DisposeValue(Isolate* isolate, Local<Value> value) {
         case WrapperType::Reference: {
             ReferenceWrapper* referenceWrapper = static_cast<ReferenceWrapper*>(wrapper);
             if (referenceWrapper->Data() != nullptr) {
-                if (referenceWrapper->ShouldDisposeData()) {
-                    std::free(referenceWrapper->Data());
-                }
                 referenceWrapper->SetData(nullptr);
                 referenceWrapper->SetEncoding(nullptr);
             }

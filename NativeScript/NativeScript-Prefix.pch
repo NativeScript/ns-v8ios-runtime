@@ -1,7 +1,7 @@
 #ifndef NativeScript_Prefix_pch
 #define NativeScript_Prefix_pch
 
-#define NATIVESCRIPT_VERSION "7.2.0"
+#define NATIVESCRIPT_VERSION "8.1.0-rc.0"
 
 #ifdef DEBUG
 #define SIZEOF_OFF_T 8

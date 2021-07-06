@@ -182,6 +182,11 @@ unichar functionWithUnichar(unichar x) {
     return sum;
 }
 
++(NSNumber*)methodWithNSNumber:(NSNumber*) x {
+    TNSLog([NSString stringWithFormat:@"%@", x]);
+    return x;
+}
+
 - (char)methodWithChar:(char)x {
     TNSLog([NSString stringWithFormat:@"%hhd", x]);
     return x;
@@ -260,6 +265,11 @@ unichar functionWithUnichar(unichar x) {
 }
 - (unichar)methodWithUnichar:(unichar)x {
     TNSLog([NSString stringWithFormat:@"%C", x]);
+    return x;
+}
+
+- (NSNumber*)methodWithNSNumber:(NSNumber*) x {
+    TNSLog([NSString stringWithFormat:@"%@", x]);
     return x;
 }
 

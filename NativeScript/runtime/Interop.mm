@@ -46,43 +46,53 @@ Interop::JSBlock::JSBlockDescriptor Interop::JSBlock::kJSBlockDescriptor = {
                     v8::Locker locker(isolate);
                     Isolate::Scope isolate_scope(isolate);
                     HandleScope handle_scope(isolate);
+                    BlockWrapper* blockWrapper = static_cast<BlockWrapper*>(tns::GetValue(isolate, callback));
                     tns::DeleteValue(isolate, callback);
                     wrapper->callback_->Reset();
+                    delete blockWrapper;
                 }
             }
             delete wrapper;
+            ffi_closure_free(block->ffiClosure);
             block->~JSBlock();
         }
     }
 };
 
-IMP Interop::CreateMethod(const uint8_t initialParamIndex, const uint8_t argsCount, const TypeEncoding* typeEncoding, FFIMethodCallback callback, void* userData) {
+std::pair<IMP, ffi_closure*> Interop::CreateMethodInternal(const uint8_t initialParamIndex, const uint8_t argsCount, const TypeEncoding* typeEncoding, FFIMethodCallback callback, void* userData) {
     void* functionPointer;
     ffi_closure* closure = static_cast<ffi_closure*>(ffi_closure_alloc(sizeof(ffi_closure), &functionPointer));
     ParametrizedCall* call = ParametrizedCall::Get(typeEncoding, initialParamIndex, initialParamIndex + argsCount);
     ffi_status status = ffi_prep_closure_loc(closure, call->Cif, callback, userData, functionPointer);
     tns::Assert(status == FFI_OK);
 
-    return (IMP)functionPointer;
+    return std::make_pair((IMP)functionPointer, closure);
+
+}
+
+IMP Interop::CreateMethod(const uint8_t initialParamIndex, const uint8_t argsCount, const TypeEncoding* typeEncoding, FFIMethodCallback callback, void* userData) {
+    std::pair<IMP, ffi_closure*> result = Interop::CreateMethodInternal(initialParamIndex, argsCount, typeEncoding, callback, userData);
+    return result.first;
 }
 
 CFTypeRef Interop::CreateBlock(const uint8_t initialParamIndex, const uint8_t argsCount, const TypeEncoding* typeEncoding, FFIMethodCallback callback, void* userData) {
     JSBlock* blockPointer = reinterpret_cast<JSBlock*>(malloc(sizeof(JSBlock)));
-    void* functionPointer = (void*)CreateMethod(initialParamIndex, argsCount, typeEncoding, callback, userData);
+
+    std::pair<IMP, ffi_closure*> result = Interop::CreateMethodInternal(initialParamIndex, argsCount, typeEncoding, callback, userData);
 
     *blockPointer = {
         .isa = nullptr,
         .flags = JSBlock::BLOCK_HAS_COPY_DISPOSE | JSBlock::BLOCK_NEEDS_FREE | (1 /* ref count */ << 1),
         .reserved = 0,
-        .invoke = functionPointer,
+        .invoke = (void*)result.first,
         .descriptor = &JSBlock::kJSBlockDescriptor,
+        .userData = userData,
+        .ffiClosure = result.second,
     };
-
-    blockPointer->userData = userData;
 
     object_setClass((__bridge id)blockPointer, objc_getClass("__NSMallocBlock__"));
 
-    return blockPointer;
+    return CFAutorelease(blockPointer);
 }
 
 Local<Value> Interop::CallFunction(CMethodCall& methodCall) {
@@ -125,6 +135,11 @@ void Interop::SetFFIParams(Local<Context> context, const TypeEncoding* typeEncod
     }
 }
 
+bool Interop::isRefTypeEqual(const TypeEncoding* typeEncoding, const char* clazz){
+    std::string n(&typeEncoding->details.interfaceDeclarationReference.name.value());
+    return n.compare(clazz) == 0;
+}
+
 void Interop::WriteValue(Local<Context> context, const TypeEncoding* typeEncoding, void* dest, Local<Value> arg) {
     Isolate* isolate = context->GetIsolate();
 
@@ -132,6 +147,10 @@ void Interop::WriteValue(Local<Context> context, const TypeEncoding* typeEncodin
         ffi_type* ffiType = FFICall::GetArgumentType(typeEncoding, true);
         size_t size = ffiType->size;
         memset(dest, 0, size);
+    } else if (tns::IsBool(arg) && typeEncoding->type == BinaryTypeEncodingType::InterfaceDeclarationReference && isRefTypeEqual(typeEncoding, "NSNumber")) {
+        bool value = tns::ToBool(arg);
+        NSNumber *num = [NSNumber numberWithBool: value];
+        Interop::SetValue(dest, num);
     } else if (tns::IsBool(arg) && typeEncoding->type == BinaryTypeEncodingType::IdEncoding) {
         bool value = tns::ToBool(arg);
         NSObject* o = @(value);
@@ -286,8 +305,10 @@ void Interop::WriteValue(Local<Context> context, const TypeEncoding* typeEncodin
                     Local<Value> value = referenceWrapper->Value() != nullptr ? referenceWrapper->Value()->Get(isolate) : Local<Value>();
                     ffi_type* ffiType = FFICall::GetArgumentType(innerType);
                     data = calloc(1, ffiType->size);
-                    referenceWrapper->SetData(data);
+
+                    referenceWrapper->SetData(data, true);
                     referenceWrapper->SetEncoding(innerType);
+
                     // Initialize the ref/out parameter value before passing it to the function call
                     if (!value.IsEmpty()) {
                         Interop::WriteValue(context, innerType, data, value);
@@ -341,7 +362,7 @@ void Interop::WriteValue(Local<Context> context, const TypeEncoding* typeEncodin
         BaseDataWrapper* baseWrapper = tns::GetValue(isolate, arg);
         if (baseWrapper != nullptr && baseWrapper->Type() == WrapperType::Block) {
             BlockWrapper* wrapper = static_cast<BlockWrapper*>(baseWrapper);
-            blockPtr = wrapper->Block();
+            blockPtr = Block_copy(wrapper->Block());
         } else {
             std::shared_ptr<Persistent<Value>> poCallback = std::make_shared<Persistent<Value>>(isolate, arg);
             MethodCallbackWrapper* userData = new MethodCallbackWrapper(isolate, poCallback, 1, argsCount, blockTypeEncoding);
@@ -503,13 +524,16 @@ void Interop::WriteValue(Local<Context> context, const TypeEncoding* typeEncodin
             Local<ArrayBuffer> buffer = arg.As<ArrayBuffer>();
             NSDataAdapter* adapter = [[NSDataAdapter alloc] initWithJSObject:buffer isolate:isolate];
             Interop::SetValue(dest, adapter);
+            CFAutorelease(adapter);
         } else if (tns::IsArrayOrArrayLike(isolate, obj)) {
             Local<v8::Array> array = Interop::ToArray(obj);
             ArrayAdapter* adapter = [[ArrayAdapter alloc] initWithJSObject:array isolate:isolate];
             Interop::SetValue(dest, adapter);
+            CFAutorelease(adapter);
         } else {
             DictionaryAdapter* adapter = [[DictionaryAdapter alloc] initWithJSObject:obj isolate:isolate];
             Interop::SetValue(dest, adapter);
+            CFAutorelease(adapter);
         }
     } else {
         tns::Assert(false, isolate);
@@ -565,6 +589,7 @@ id Interop::ToObject(Local<Context> context, v8::Local<v8::Value> arg) {
         } else {
             Local<Object> obj = arg.As<Object>();
             DictionaryAdapter* adapter = [[DictionaryAdapter alloc] initWithJSObject:obj isolate:isolate];
+            CFAutorelease(adapter);
             return adapter;
         }
     }

@@ -252,6 +252,7 @@ Local<Value> tns::GetPrivateValue(const Local<Object>& obj, const Local<v8::Stri
         return Local<Value>();
     }
 
+    v8::Locker locker(isolate);
     Local<Value> result;
     if (!obj->GetPrivate(context, privateKey).ToLocal(&result)) {
         tns::Assert(false, isolate);

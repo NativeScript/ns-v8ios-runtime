@@ -86,4 +86,12 @@ The compiled fat static libraries will be placed inside the `v8/dist` folder.
 
 # Building a Distribution Package
 
-Use the `build_all.sh` script included in this repository to produce the `dist/npm/nativescript-ios-{version}.tgz` NPM package.
+1. Bump the version in package.json
+2. Run: `npm run update-version` (*This will update the runtime headers with version info*)
+3. Finally build/pack with the following:
+
+```
+npm run build
+```
+
+This will create: `dist/npm/nativescript-ios-{version}.tgz` NPM package ready for publishing.

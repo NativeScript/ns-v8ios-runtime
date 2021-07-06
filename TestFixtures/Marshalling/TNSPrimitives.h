@@ -43,6 +43,7 @@ unichar functionWithUnichar(unichar x);
 + (NSNull*)methodWithNull:(NSNull*)x;
 + (unichar)methodWithUnichar:(unichar)x;
 + (id)methodWithId:(id)x;
++ (NSNumber*)methodWithNSNumber:(NSNumber*)x;
 
 - (char)methodWithChar:(char)x;
 - (short)methodWithShort:(short)x;
@@ -64,5 +65,5 @@ unichar functionWithUnichar(unichar x);
 - (Protocol*)methodWithProtocol:(Protocol*)x;
 - (NSNull*)methodWithNull:(NSNull*)x;
 - (unichar)methodWithUnichar:(unichar)x;
-
+- (NSNumber*)methodWithNSNumber:(NSNumber*)x;
 @end

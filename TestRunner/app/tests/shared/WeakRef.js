@@ -3,24 +3,13 @@ describe("WeakRef", function () {
         expect(WeakRef).toBeDefined();
     });
 
+    // deref/get tests have been removed since they are now coming from v8 and not our code
+    // we can safely assume it's well-tested.
+    // we only check to make sure we have a `get` alias to `deref` since NativeScript
+    // has used `get()` long before `deref()` was standardized.
     it("get should work", function () {
-        var obj = {};
-        var weakref = new WeakRef(obj);
-
-        obj = null;
-        gc();
-
-        expect(weakref.get()).toBe(null);
-    });
-
-    it("deref should work", function () {
-        var obj = {};
-        var weakref = new WeakRef(obj);
-
-        obj = null;
-        gc();
-
-        expect(weakref.deref()).toBe(null);
+        expect(WeakRef.prototype.get).toBeDefined();
+        expect(WeakRef.prototype.get).toEqual(WeakRef.prototype.deref);
     });
 
     it("should throw when constructed with zero parameters", function () {
@@ -37,12 +26,22 @@ describe("WeakRef", function () {
         }
     });
 
-    it("should be clearable", function () {
-        var obj = {};
-        var weakref = new WeakRef(obj);
+    it("clear should exist", function () {
+        expect(WeakRef.prototype.clear).toBeDefined();
 
-        weakref.clear();
+        const warn = console.warn
+        console.warn = (message) => {
+            warn(message);
+            expect(message).toEqual("WeakRef.clear() is non-standard and has been deprecated. It does nothing and the call can be safely removed.")
+        }
 
-        expect(weakref.get()).toBeNull();
+        const obj = {}
+        const weakRef = new WeakRef(obj);
+
+        weakRef.clear();
+
+        // reset console.warn to it's original
+        console.warn = warn;
     });
+
 });
