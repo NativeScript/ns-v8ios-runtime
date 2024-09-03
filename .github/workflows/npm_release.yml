@@ -142,7 +142,7 @@ jobs:
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org"
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: npm-package
           path: dist
@@ -172,11 +172,11 @@ jobs:
           node-version: 20
       - name: Setup
         run: npm install
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: npm-package
           path: dist
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: NativeScript-dSYMs
           path: dist/dSYMs
