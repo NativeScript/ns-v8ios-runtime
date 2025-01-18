@@ -9,35 +9,35 @@
 
 namespace rnv8 {
 
-V8PointerValue::V8PointerValue(
-    v8::Isolate *isolate,
-    const v8::Local<v8::Value> &value)
+V8PointerValue::V8PointerValue(v8::Isolate* isolate,
+                               const v8::Local<v8::Value>& value)
     : isolate_(isolate), value_(isolate, value) {}
 
-V8PointerValue::V8PointerValue(
-    v8::Isolate *isolate,
-    v8::Global<v8::Value> &&value)
+V8PointerValue::V8PointerValue(v8::Isolate* isolate,
+                               v8::Global<v8::Value>&& value)
     : isolate_(isolate), value_(std::move(value)) {}
 
 V8PointerValue::~V8PointerValue() {}
 
-v8::Local<v8::Value> V8PointerValue::Get(v8::Isolate *isolate) const {
+v8::Local<v8::Value> V8PointerValue::Get(v8::Isolate* isolate) const {
   v8::EscapableHandleScope scopedHandle(isolate);
   return scopedHandle.Escape(value_.Get(isolate));
 }
 
+void V8PointerValue::Reset(v8::Isolate* isolate, v8::Local<v8::Value> value) {
+  v8::HandleScope scopedHandle(isolate);
+  value_.Reset(isolate, value);
+}
+
 // static
-V8PointerValue *V8PointerValue::createFromOneByte(
-    v8::Isolate *isolate,
-    const char *str,
-    size_t length) {
+V8PointerValue* V8PointerValue::createFromOneByte(v8::Isolate* isolate,
+                                                  const char* str,
+                                                  size_t length) {
   v8::HandleScope scopedHandle(isolate);
   v8::Local<v8::String> v8String;
   if (!v8::String::NewFromOneByte(
-           isolate,
-           reinterpret_cast<const uint8_t *>(str),
-           v8::NewStringType::kNormal,
-           static_cast<int>(length))
+           isolate, reinterpret_cast<const uint8_t*>(str),
+           v8::NewStringType::kNormal, static_cast<int>(length))
            .ToLocal(&v8String)) {
     return nullptr;
   }
@@ -45,17 +45,14 @@ V8PointerValue *V8PointerValue::createFromOneByte(
 }
 
 // static
-V8PointerValue *V8PointerValue::createFromUtf8(
-    v8::Isolate *isolate,
-    const uint8_t *str,
-    size_t length) {
+V8PointerValue* V8PointerValue::createFromUtf8(v8::Isolate* isolate,
+                                               const uint8_t* str,
+                                               size_t length) {
   v8::HandleScope scopedHandle(isolate);
   v8::Local<v8::String> v8String;
-  if (!v8::String::NewFromUtf8(
-           isolate,
-           reinterpret_cast<const char *>(str),
-           v8::NewStringType::kNormal,
-           static_cast<int>(length))
+  if (!v8::String::NewFromUtf8(isolate, reinterpret_cast<const char*>(str),
+                               v8::NewStringType::kNormal,
+                               static_cast<int>(length))
            .ToLocal(&v8String)) {
     return nullptr;
   }
@@ -71,4 +68,4 @@ void V8PointerValue::invalidate() {
   delete this;
 }
 
-} // namespace rnv8
+}  // namespace rnv8
